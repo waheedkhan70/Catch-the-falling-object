@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Falling Objects</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #3498db, #2ecc71);
+        }
+
+        canvas {
+            display: block;
+            margin: auto;
+            background: #ecf0f1;
+            border: 2px solid #34495e;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+
+        // Game variables
+        const basket = {
+            x: canvas.width / 2 - 50,
+            y: canvas.height - 30,
+            width: 100,
+            height: 20,
+            speed: 7
+        };
+
+        const objects = [];
+        const objectRadius = 15;
+        let score = 0;
+        let gameOver = false;
+
+        // Controls
+        let leftArrowPressed = false;
+        let rightArrowPressed = false;
+
+        // Handle key events
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') leftArrowPressed = true;
+            if (e.key === 'ArrowRight') rightArrowPressed = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') leftArrowPressed = false;
+            if (e.key === 'ArrowRight') rightArrowPressed = false;
+        });
+
+        // Draw basket
+        function drawBasket() {
+            ctx.fillStyle = '#34495e';
+            ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
+        }
+
+        // Draw objects
+        function drawObjects() {
+            objects.forEach(obj => {
+                ctx.beginPath();
+                ctx.arc(obj.x, obj.y, objectRadius, 0, Math.PI * 2);
+                ctx.fillStyle = '#e74c3c';
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        // Move basket
+        function moveBasket() {
+            if (leftArrowPressed && basket.x > 0) {
+                basket.x -= basket.speed;
+            }
+            if (rightArrowPressed && basket.x + basket.width < canvas.width) {
+                basket.x += basket.speed;
+            }
+        }
+
+        // Update objects
+        function updateObjects() {
+            objects.forEach((obj, index) => {
+                obj.y += obj.speed;
+
+                // Check for collision with basket
+                if (
+                    obj.y + objectRadius > basket.y &&
+                    obj.x > basket.x &&
+                    obj.x < basket.x + basket.width
+                ) {
+                    score += 10;
+                    objects.splice(index, 1);
+                }
+
+                // Remove objects that fall out of the canvas
+                if (obj.y - objectRadius > canvas.height) {
+                    objects.splice(index, 1);
+                    gameOver = true;
+                }
+            });
+
+            // Update score display
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+
+        // Generate new objects
+        function generateObjects() {
+            if (Math.random() < 0.02) {
+                const x = Math.random() * (canvas.width - objectRadius * 2) + objectRadius;
+                const speed = Math.random() * 3 + 2;
+                objects.push({ x, y: 0, speed });
+            }
+        }
+
+        // Game over screen
+        function showGameOver() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '36px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2);
+
+            ctx.font = '24px Arial';
+            ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (gameOver) {
+                showGameOver();
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBasket();
+            drawObjects();
+
+            moveBasket();
+            updateObjects();
+            generateObjects();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
